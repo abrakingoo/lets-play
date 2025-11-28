@@ -9,10 +9,13 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class Product {
     @Id
     String id;
+    
     String name;
     String description;
     Double price;
     String userId;
+
+    public Product() {}
 
     public Product(String name, String description, Double price, String userId) {
         this.id = UUID.randomUUID().toString();
