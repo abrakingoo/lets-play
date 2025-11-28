@@ -2,12 +2,20 @@ package com.lets_play_e_comerce_platform.lets_play;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @SpringBootApplication
+@RestController
 public class LetsPlayApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(LetsPlayApplication.class, args);
+	}
+
+	@GetMapping("/hello")
+	public String hello() {
+		return "Hello, World!";
 	}
 
 }
