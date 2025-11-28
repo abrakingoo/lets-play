@@ -4,6 +4,9 @@ import com.lets_play_e_comerce_platform.lets_play.model.Product;
 import com.lets_play_e_comerce_platform.lets_play.service.ProductService;
 
 import org.springframework.web.bind.annotation.RestController;
+
+import org.springframework.security.core.Authentication;
+import com.lets_play_e_comerce_platform.lets_play.security.UserPrincipal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -11,6 +14,7 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -38,12 +42,13 @@ public class ProductController {
 
     
     @PostMapping("/products")
-    public ResponseEntity<?> addProduct(@RequestBody Product newProduct) {
+    public ResponseEntity<?> addProduct(@RequestBody Product newProduct, Authentication auth) {
+        UserPrincipal user = (UserPrincipal) auth.getPrincipal();
         Product addedProduct = new Product(
             newProduct.getName(),
             newProduct.getDescription(),
             newProduct.getPrice(),
-            newProduct.getUserId()
+            user.getId()
         );
         Product product = service.create(addedProduct);
         Map<String, Object> response = new HashMap<>();
@@ -121,27 +126,21 @@ public class ProductController {
     }
 
     @DeleteMapping("/products/{id}")
-    public ResponseEntity<String> deleteProduct(@PathVariable("id") String productId, @RequestBody Map<String, Object> updates) {
-        Product product = null;
-        for (Product p : products) {
-            if (p.getId().equals(productId)) {
-                product = p;
-                break;
-            }
-        }
+    public ResponseEntity<String> deleteProduct(@PathVariable("id") String productId, Authentication auth) {
+        UserPrincipal user = (UserPrincipal) auth.getPrincipal();
+        Product product = service.findById(productId).orElse(null);
         if (product == null) {
             return ResponseEntity
                     .status(HttpStatus.NOT_FOUND)
                     .body("Product not found: No product exists with ID '" + productId + "'. Please check the product ID and try again.");
         }
-        if (updates.containsKey("user-id")){
-            if (!updates.get("user-id").equals(product.getUserId())) {
+        if (!user.getId().equals(product.getUserId())) {
                 return ResponseEntity
                         .status(HttpStatus.FORBIDDEN)
                         .body("Access denied: You can only delete products that you own.");
-            }
         }
-        if (products.remove(product)) {
+        
+        if (service.delete(productId)) {
             return ResponseEntity.ok("Product deleted successfully.");
         } else {
             return ResponseEntity
