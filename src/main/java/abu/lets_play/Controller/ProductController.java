@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PathVariable;
 
@@ -41,6 +42,11 @@ public class ProductController {
     }
 
     @PatchMapping("/{id}")
+    public ResponseEntity<?> patchProduct(@PathVariable String id, @RequestBody ProductPatchRequest entity) {
+        return productService.updateProduct(id, entity);
+    }
+
+    @PutMapping("/{id}")
     public ResponseEntity<?> updateProduct(@PathVariable String id, @RequestBody ProductPatchRequest entity) {
         return productService.updateProduct(id, entity);
     }
