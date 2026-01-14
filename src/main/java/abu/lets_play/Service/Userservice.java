@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import abu.lets_play.Model.Entity.User;
 import abu.lets_play.Model.Enums.Role;
+import abu.lets_play.Model.dto.UserSignIn;
 import abu.lets_play.Model.dto.UserSignUp;
 import abu.lets_play.Repository.UserRepository;
 
@@ -22,6 +23,37 @@ public class Userservice {
     public Userservice(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+    }
+
+
+    public List<User> findAll() {
+        return userRepository.findAll();
+    }
+
+    public ResponseEntity<?> findById(String id) {
+        try {
+            User user = userRepository.findById(id).orElseThrow(() -> new IllegalStateException("User not found"));
+            return ResponseEntity.status(HttpStatus.OK).body(Map.of(
+                "user", user
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    public ResponseEntity<?> signIn(UserSignIn userSignIn) {
+        try {
+            User user = userRepository.findByEmail(userSignIn.getEmail()).orElseThrow(() -> new IllegalStateException("User not found"));
+            if (!passwordEncoder.matches(userSignIn.getPassword(), user.getPassword())) {
+                throw new IllegalStateException("Invalid password");
+            }
+            return ResponseEntity.status(HttpStatus.OK).body(Map.of(
+                "message", "User signed in successfully",
+                "user", user
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
+        }
     }
 
     public ResponseEntity<?> signUp(UserSignUp userSignUp) {
@@ -43,9 +75,5 @@ public class Userservice {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
         }
-    }
-
-    public List<User> findAll() {
-        return userRepository.findAll();
     }
 }
