@@ -1,10 +1,12 @@
 package abu.lets_play.Model.dto;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
 public class UserSignIn {
 
     @NotBlank(message = "Email is required for user authentication")
+    @Email(message = "Invalid email format")
     private String email;
     
     @NotBlank(message = "Password is required for user authentication")
