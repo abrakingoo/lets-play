@@ -13,22 +13,21 @@ public class UserSignUp {
     @NotBlank(message = "Password is required")
     private String password;
 
-    @NotBlank(message = "Role is required")
-    private String role;
+    private String id;
 
     public UserSignUp(){}
 
-    public UserSignUp(String name, String email, String password, String role) {
+    public UserSignUp(String name, String email, String password) {
         this.name = name;
         this.email = email;
         this.password = password;
-        this.role = role;
     }
 
     public String getName() {return name; }
     public String getEmail() {return email; }
     public String getPassword() {return password; }
-    public String getRole() {return role;}
+    public void setId(String id) {this.id = id;}
+    public String getId() {return id;}
 
     public  void setName(String name) {this.name = name;}
 }
