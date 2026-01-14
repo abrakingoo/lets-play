@@ -11,6 +11,8 @@ A secure RESTful API built with Spring Boot and MongoDB for managing users and p
 - ✅ MongoDB injection prevention
 - ✅ Comprehensive error handling
 - ✅ Input validation and sanitization
+- ✅ CORS configuration for cross-origin requests
+- ✅ Rate limiting to prevent brute force attacks
 
 ## Tech Stack
 
@@ -171,6 +173,16 @@ Authorization: Bearer <token>
 ### Role-Based Access Control
 - **USER**: Can create products and manage their own products
 - **ADMIN**: Can manage all users and all products
+
+### CORS Configuration
+- Configured for `http://localhost:3000` and `http://localhost:4200`
+- Supports all standard HTTP methods
+- Credentials enabled for authenticated requests
+
+### Rate Limiting
+- **Limit**: 20 requests per minute per IP address
+- Prevents brute force attacks on authentication endpoints
+- Returns HTTP 429 (Too Many Requests) when limit exceeded
 
 ## Error Handling
 
