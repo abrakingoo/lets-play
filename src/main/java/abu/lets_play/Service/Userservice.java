@@ -15,6 +15,7 @@ import abu.lets_play.Model.dto.UserResonse;
 import abu.lets_play.Model.dto.UserSignIn;
 import abu.lets_play.Model.dto.UserSignUp;
 import abu.lets_play.Repository.UserRepository;
+import abu.lets_play.Security.InputSanitizer;
 import abu.lets_play.Security.JwtUtil;
 
 @Service
@@ -23,12 +24,14 @@ public class Userservice {
     private final BCryptPasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final TokenBlacklistService tokenBlacklistService;
+    private final InputSanitizer inputSanitizer;
 
-    public Userservice(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, JwtUtil jwtUtil, TokenBlacklistService tokenBlacklistService) {
+    public Userservice(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, JwtUtil jwtUtil, TokenBlacklistService tokenBlacklistService, InputSanitizer inputSanitizer) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
         this.tokenBlacklistService = tokenBlacklistService;
+        this.inputSanitizer = inputSanitizer;
     }
 
 
@@ -52,7 +55,8 @@ public class Userservice {
 
     public ResponseEntity<?> signIn(UserSignIn userSignIn) {
         try {
-            User user = userRepository.findByEmail(userSignIn.getEmail()).orElseThrow(() -> new IllegalStateException("User not found"));
+            String email = inputSanitizer.sanitize(userSignIn.getEmail());
+            User user = userRepository.findByEmail(email).orElseThrow(() -> new IllegalStateException("User not found"));
             if (!passwordEncoder.matches(userSignIn.getPassword(), user.getPassword())) {
                 throw new IllegalStateException("Invalid password");
             }
@@ -78,13 +82,16 @@ public class Userservice {
 
     public ResponseEntity<?> signUp(UserSignUp userSignUp) {
         try {
-            if (userRepository.findByEmail(userSignUp.getEmail()).isPresent()) {
+            String email = inputSanitizer.sanitize(userSignUp.getEmail());
+            String name = inputSanitizer.sanitize(userSignUp.getName());
+            
+            if (userRepository.findByEmail(email).isPresent()) {
                 throw new IllegalStateException("Email already exists");
             }
             User user = new User();
             user.setId(UUID.randomUUID().toString());
-            user.setName(userSignUp.getName());
-            user.setEmail(userSignUp.getEmail());
+            user.setName(name);
+            user.setEmail(email);
             user.setPassword(passwordEncoder.encode(userSignUp.getPassword()));
             user.setRole(Role.USER);
             User savedUser = userRepository.save(user);
@@ -105,6 +112,18 @@ public class Userservice {
             ));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    public ResponseEntity<?> deleteUser(String id) {
+        try {
+            if (!userRepository.existsById(id)) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found"));
+            }
+            userRepository.deleteById(id);
+            return ResponseEntity.status(HttpStatus.OK).body(Map.of("message", "User deleted successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", e.getMessage()));
         }
     }
 }
