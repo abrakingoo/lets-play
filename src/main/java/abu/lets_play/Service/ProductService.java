@@ -4,8 +4,11 @@ import abu.lets_play.Model.Entity.Product;
 import abu.lets_play.Model.dto.NewProductRequest;
 import abu.lets_play.Model.dto.ProductPatchRequest;
 import abu.lets_play.Repository.ProductRepository;
+import abu.lets_play.Security.InputSanitizer;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,9 +19,11 @@ import java.util.UUID;
 public class ProductService {
 
     private final ProductRepository repo;
+    private final InputSanitizer inputSanitizer;
 
-    public ProductService(ProductRepository repo) {
+    public ProductService(ProductRepository repo, InputSanitizer inputSanitizer) {
         this.repo = repo;
+        this.inputSanitizer = inputSanitizer;
     }
 
     public List<Product> findAll() {
@@ -30,11 +35,15 @@ public class ProductService {
     }
 
     public ResponseEntity<Map<String, Object>> addNewProduct(NewProductRequest request) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String userId = auth.getName();
+
         Product product = new Product();
         product.setId(UUID.randomUUID().toString());
-        product.setName(request.getName());
-        product.setDescription(request.getDescription());
+        product.setName(inputSanitizer.sanitize(request.getName()));
+        product.setDescription(inputSanitizer.sanitize(request.getDescription()));
         product.setPrice(request.getPrice());
+        product.setOwnerId(userId);
         
         boolean saved = repo.save(product) != null;
         
@@ -43,9 +52,14 @@ public class ProductService {
     }
 
     public ResponseEntity<?> updateProduct(String id, ProductPatchRequest entity) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String userId = auth.getName();
+        boolean isAdmin = auth.getAuthorities().stream()
+            .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
         final String name = entity.getName();
         final String description = entity.getDescription();
-        final Integer price = entity.getPrice();
+        final Double price = entity.getPrice();
         
         if (id == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "id is required"));
@@ -61,9 +75,13 @@ public class ProductService {
         if (existingProduct == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Product not found"));
         }
+
+        if (!isAdmin && !userId.equals(existingProduct.getOwnerId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "You can only edit your own products"));
+        }
         
-        if (name != null) existingProduct.setName(name);
-        if (description != null) existingProduct.setDescription(description);
+        if (name != null) existingProduct.setName(inputSanitizer.sanitize(name));
+        if (description != null) existingProduct.setDescription(inputSanitizer.sanitize(description));
         if (price != null) existingProduct.setPrice(price);
 
         if (repo.save(existingProduct) == null) {
@@ -82,9 +100,24 @@ public class ProductService {
     }
 
     public ResponseEntity<?> deleteProduct(String id) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String userId = auth.getName();
+        boolean isAdmin = auth.getAuthorities().stream()
+            .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
         if (id == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "id is required"));
         }
+
+        Product existingProduct = repo.findById(id).orElse(null);
+        if (existingProduct == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Product not found"));
+        }
+
+        if (!isAdmin && !userId.equals(existingProduct.getOwnerId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "You can only delete your own products"));
+        }
+
         repo.deleteById(id);
         return ResponseEntity.status(HttpStatus.OK).body(Map.of("message", "Product deleted successfully"));
     }
