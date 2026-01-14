@@ -3,6 +3,7 @@ package abu.lets_play.Config;
 import java.io.IOException;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
@@ -16,6 +17,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
+import java.util.Collections;
 
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
@@ -45,8 +48,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     .parseSignedClaims(token)
                     .getPayload();
 
+                String role = claims.get("role", String.class);
                 UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                    claims.getSubject(), null, null);
+                    claims.getSubject(), null, Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role)));
                 auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(auth);
             } catch (Exception e) {
