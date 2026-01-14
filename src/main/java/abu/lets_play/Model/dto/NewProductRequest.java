@@ -14,7 +14,7 @@ public class NewProductRequest {
 
     @NotNull(message = "Price is required")
     @Min(value = 0, message = "Price must be 0 or greater")
-    private Integer price;
+    private Double price;
 
     public String getName() {
         return name;
@@ -24,7 +24,7 @@ public class NewProductRequest {
         return description;
     }
 
-    public Integer getPrice() {
+    public Double getPrice() {
         return price;
     }
 }
