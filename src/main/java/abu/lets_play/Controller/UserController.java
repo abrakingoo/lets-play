@@ -3,7 +3,7 @@ package abu.lets_play.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import abu.lets_play.Model.Entity.User;
+import abu.lets_play.Model.dto.UserResonse;
 import abu.lets_play.Service.Userservice;
 
 import org.springframework.http.ResponseEntity;
@@ -22,7 +22,7 @@ public class UserController {
     }
 
     @GetMapping
-    public List<User> getMethodName() {
+    public List<UserResonse> getMethodName() {
         return userService.findAll();
     }
 

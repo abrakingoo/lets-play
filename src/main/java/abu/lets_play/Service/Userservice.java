@@ -15,27 +15,35 @@ import abu.lets_play.Model.dto.UserResonse;
 import abu.lets_play.Model.dto.UserSignIn;
 import abu.lets_play.Model.dto.UserSignUp;
 import abu.lets_play.Repository.UserRepository;
+import abu.lets_play.Security.JwtUtil;
 
 @Service
 public class Userservice {
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
+    private final TokenBlacklistService tokenBlacklistService;
 
-    public Userservice(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder) {
+    public Userservice(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, JwtUtil jwtUtil, TokenBlacklistService tokenBlacklistService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtUtil = jwtUtil;
+        this.tokenBlacklistService = tokenBlacklistService;
     }
 
 
-    public List<User> findAll() {
-        return userRepository.findAll();
+    public List<UserResonse> findAll() {
+        return userRepository.findAll().stream()
+            .map(user -> new UserResonse(user.getId(), user.getName(), user.getEmail(), user.getRole()))
+            .toList();
     }
 
     public ResponseEntity<?> findById(String id) {
         try {
             User user = userRepository.findById(id).orElseThrow(() -> new IllegalStateException("User not found"));
+            UserResonse userData = new UserResonse(user.getId(), user.getName(), user.getEmail(), user.getRole());
             return ResponseEntity.status(HttpStatus.OK).body(Map.of(
-                "user", user
+                "user", userData
             ));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
@@ -55,9 +63,13 @@ public class Userservice {
                 user.getEmail(),
                 user.getRole()
             );
+
+            String token = jwtUtil.generateWebToken(user.getId(), user.getEmail(), user.getRole());
+
             return ResponseEntity.status(HttpStatus.OK).body(Map.of(
                 "message", "User signed in successfully",
-                "user", userData
+                "user", userData,
+                "token", token
             ));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
@@ -76,9 +88,20 @@ public class Userservice {
             user.setPassword(passwordEncoder.encode(userSignUp.getPassword()));
             user.setRole(Role.USER);
             User savedUser = userRepository.save(user);
+
+            UserResonse userData = new UserResonse(
+                savedUser.getId(),
+                savedUser.getName(),
+                savedUser.getEmail(),
+                savedUser.getRole()
+            );
+
+            String token = jwtUtil.generateWebToken(savedUser.getId(), savedUser.getEmail(), savedUser.getRole());
+
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
                 "message", "User created successfully",
-                "user", savedUser
+                "user", userData,
+                "token", token
             ));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
