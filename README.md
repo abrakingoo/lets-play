@@ -1,4 +1,5 @@
 # Let's Play - RESTful CRUD API
+<img width="1917" height="1050" alt="get_products" src="https://github.com/user-attachments/assets/51946f67-7917-489f-8b74-9c90e76a09d3" />
 
 A secure RESTful API built with Spring Boot and MongoDB for managing users and products with JWT-based authentication and role-based access control.
 
