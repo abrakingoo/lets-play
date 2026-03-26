@@ -33,7 +33,7 @@ A secure RESTful API built with Spring Boot and MongoDB for managing users and p
 
 ### 1. Clone the repository
 ```bash
-git clone https://learn.zone01kisumu.ke/git/abrakingoo/lets-play
+git clone https://github.com/abrakingoo/lets-play.git
 cd lets-play
 ```
 
